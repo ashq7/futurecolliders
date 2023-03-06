@@ -131,6 +131,7 @@ void Analysis(const char *inputFile)
 	
 	histograms.Define("aJetPairMass", "Generator-level a jet-pair Mass", 100, 0.0, 100.0);
   histograms.Define("aTauPairMass", "Generator-level a tau-pair Mass", 100, 0.0, 100.0);
+  histograms.Define("Check4Vector", "Jet4Vector Pt", 100, 0.0, 100.0);
 
   histograms.Define("Class1Z", "Class 1 Z Mass", 100, 0.0, 100.0);
   histograms.Define("Class2Z", "Class 2 Z Mass", 100, 0.0, 100.0);
@@ -157,6 +158,12 @@ void Analysis(const char *inputFile)
     Electron *elec2 = 0;
     Muon *muon1 = 0;
     Muon *muon2 = 0;
+    Jet *Jet = 0;
+    Jet *GenJet = 0;
+    Jet *GenJet2 = 0;
+    Jet *GenJet3 = 0;
+    Jet *GenJet4 = 0;
+
     double dimuonMass=0;
     double dielectronMass=0;
     double tauPairMass = 0;
@@ -238,17 +245,24 @@ void Analysis(const char *inputFile)
     //Cleaning big mess
   for (Int_t i = 0; i < branchJet->GetEntries(); i++) {
   	Jet* Jet  = (Jet*) branchJet->At(i);
+  	TLorentzVector Jet4Vector = Jet->P4();
+  	histograms.Fill("Check4Vector", Jet4Vector.Pt());
+  	//T.Pt()-make sure i made 4 vector 
+  	//A.deltaR(B)
+
   	for (Int_t j = 0; i < branchElectron->GetEntries(); j++) {
-  		Electron* Electron=(Electron*) branchElectron->At(j);
-  		double deltaR = sqrt(Jet->DeltaEta*Electron->DeltaEta + Jet->DeltaPhi*Electron->DeltaPhi);
+  		Electron* Electron  = (Electron*) branchElectron->At(j);
+  		TLorentzVector Electron4Vector = Electron->P4();
+  		double deltaR = Jet4Vector.deltaR(Electron4Vector);
   		goodJet = true;
   		//double deltaRJet = Jet.P4.DeltaR(Jet.P4);
   	}
   	if (goodJet == true){
-  		histograms.Fill("GoodJetMass", Jet->P4());
+  		histograms.Fill("GoodJetMass", Jet->P4().M());
   	}
-  	
   }
+  	
+ 
  
 	if (branchJet->GetEntries() > 1){
       	//loop over jet, loop over electrons: if electron and top jet
@@ -263,16 +277,14 @@ void Analysis(const char *inputFile)
 				//QUESTION: should I be doing this with gen Taus?
 				//change jets reco->gen
 				Met = (MissingET *) branchMET->At(0);
-				if(Met.P4 > 30 && genTaus.size()==2){
+				if(Met->MET > 30 && genTaus.size()==2){
 					//gen taus within gen jets
-
 						Class3 = true;
 				}
 				//Class 4: 2 jets in Z range
 				if (branchJet->GetEntries()==4 && JetPair.M()>80 && JetPair.M()<110){
 					//need to tag this pair as a Z boson
 					Class4 = true;
-					
 				}
 
 				//Class 5: 4 taus
@@ -413,7 +425,5 @@ void Analysis(const char *inputFile)
 	}
       }
     }
-      
-  } // Event loop
-
-}
+      }}
+  
