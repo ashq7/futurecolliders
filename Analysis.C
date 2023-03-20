@@ -132,6 +132,7 @@ void Analysis(const char *inputFile)
 	histograms.Define("aJetPairMass", "Generator-level a jet-pair Mass", 100, 0.0, 100.0);
   histograms.Define("aTauPairMass", "Generator-level a tau-pair Mass", 100, 0.0, 100.0);
   histograms.Define("Check4Vector", "Jet4Vector Pt", 100, 0.0, 100.0);
+  histograms.Define("GoodJetMass", "Cleaned Jet Mass", 100, 0.0, 100.0);
 
   histograms.Define("Class1Z", "Class 1 Z Mass", 100, 0.0, 100.0);
   histograms.Define("Class2Z", "Class 2 Z Mass", 100, 0.0, 100.0);
@@ -156,13 +157,14 @@ void Analysis(const char *inputFile)
 
     Electron *elec1 = 0;
     Electron *elec2 = 0;
+    Electron *electron = 0;
     Muon *muon1 = 0;
     Muon *muon2 = 0;
-    Jet *Jet = 0;
-    Jet *GenJet = 0;
-    Jet *GenJet2 = 0;
-    Jet *GenJet3 = 0;
-    Jet *GenJet4 = 0;
+    Jet *jet = 0;
+    Jet *genJet = 0;
+    Jet *genJet2 = 0;
+    Jet *genJet3 = 0;
+    Jet *genJet4 = 0;
 
     double dimuonMass=0;
     double dielectronMass=0;
@@ -244,21 +246,22 @@ void Analysis(const char *inputFile)
 
     //Cleaning big mess
   for (Int_t i = 0; i < branchJet->GetEntries(); i++) {
-  	Jet* Jet  = (Jet*) branchJet->At(i);
-  	TLorentzVector Jet4Vector = Jet->P4();
+  	jet  = (Jet*) branchJet->At(i);
+  	//Jet = (Jet *) branchJet->At(i);
+  	TLorentzVector Jet4Vector = jet->P4();
   	histograms.Fill("Check4Vector", Jet4Vector.Pt());
   	//T.Pt()-make sure i made 4 vector 
   	//A.deltaR(B)
 
   	for (Int_t j = 0; i < branchElectron->GetEntries(); j++) {
-  		Electron* Electron  = (Electron*) branchElectron->At(j);
-  		TLorentzVector Electron4Vector = Electron->P4();
-  		double deltaR = Jet4Vector.deltaR(Electron4Vector);
+  		electron  = (Electron*) branchElectron->At(j);
+  		TLorentzVector Electron4Vector = electron->P4();
+  		double deltaR = Jet4Vector.DeltaR(Electron4Vector);
   		goodJet = true;
   		//double deltaRJet = Jet.P4.DeltaR(Jet.P4);
   	}
   	if (goodJet == true){
-  		histograms.Fill("GoodJetMass", Jet->P4().M());
+  		histograms.Fill("GoodJetMass", jet->P4().M());
   	}
   }
   	
@@ -266,9 +269,10 @@ void Analysis(const char *inputFile)
  
 	if (branchJet->GetEntries() > 1){
       	//loop over jet, loop over electrons: if electron and top jet
-      	Jet* GenJet  = (Jet*) branchJet->At(0);
-	 			Jet* GenJet2  = (Jet*) branchJet->At(1);
-	 			TLorentzVector JetPair = (GenJet->P4()) + (GenJet2->P4());
+      	
+      	genJet  = (Jet*) branchJet->At(0);
+	 			genJet2  = (Jet*) branchJet->At(1);
+	 			TLorentzVector JetPair = (genJet->P4()) + (genJet2->P4());
 	 			jetPairMass = JetPair.M();
 				histograms.Fill("GenJetPairMass", JetPair.M());
 				histograms.Fill("GenJetPairPT", JetPair.Pt());
@@ -319,9 +323,9 @@ void Analysis(const char *inputFile)
 	if (Class1 ==false && Class2==false && Class3==false && Class4==true && Class5==false){
 		cout <<"Class4"<< endl;
 		histograms.Fill("Class4Z", jetPairMass);
-		Jet* GenJet3  = (Jet*) branchJet->At(2);
-	 	Jet* GenJet4  = (Jet*) branchJet->At(3);
-		TLorentzVector JetPair2 = (GenJet3->P4()) + (GenJet4->P4());
+		genJet3  = (Jet*) branchJet->At(2);
+	 	genJet4  = (Jet*) branchJet->At(3);
+		TLorentzVector JetPair2 = (genJet3->P4()) + (genJet4->P4());
 		jetPairMass2 = JetPair2.M();
 		histograms.Fill("aJetPairMass", jetPairMass2);
 		histograms.Fill("aTauPairMass", tauPairMass);
