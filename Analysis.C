@@ -130,15 +130,24 @@ void Analysis(const char *inputFile)
   histograms.Define("ZJetPairPT", "Generator-level Z boson jet-pair P_{T}", 100, 0.0, 100.0);
 	
 	histograms.Define("aJetPairMass", "Generator-level a jet-pair Mass", 100, 0.0, 100.0);
+	histograms.Define("NonJetDecayJetPair_aMass", "Class 1-3, 5 a jet-pair Mass", 100, 0.0, 100.0);
+	histograms.Define("Class4aJetPairMass", "Class 4 a jet-pair Mass", 100, 0.0, 100.0);
   histograms.Define("aTauPairMass", "Generator-level a tau-pair Mass", 100, 0.0, 100.0);
   histograms.Define("Check4Vector", "Jet4Vector Pt", 100, 0.0, 100.0);
   histograms.Define("GoodJetMass", "Cleaned Jet Mass", 100, 0.0, 100.0);
+  histograms.Define("deltaR", "deltaR between Jet and Electrons", 100, 0.0, 10.0);
 
   histograms.Define("Class1Z", "Class 1 Z Mass", 100, 0.0, 100.0);
   histograms.Define("Class2Z", "Class 2 Z Mass", 100, 0.0, 100.0);
-  histograms.Define("Class3Z", "Class 3 Z Mass", 100, 0.0, 100.0);
+  histograms.Define("Class3Z", "Class 3 MET", 100, 0.0, 100.0);
   histograms.Define("Class4Z", "Class 4 Z Mass", 100, 0.0, 100.0);
   histograms.Define("Class5Z", "Class 5 Z Mass", 100, 0.0, 100.0);
+
+	histograms.Define("Class1aJetPairMass", "Z->Muon Decay Reconstructed dijet a Mass", 100, 0.0, 100.0);
+	histograms.Define("Class2aJetPairMass", "Z->Electron Decay Reconstructed dijet a Mass", 100, 0.0, 100.0);
+	histograms.Define("Class3aJetPairMass", "Z->Neutrino Decay Reconstructed dijet a Mass", 100, 0.0, 100.0);
+	histograms.Define("Class4aJetPairMass", "Z->Jet Decay Reconstructed dijet a Mass", 100, 0.0, 100.0);
+	histograms.Define("Class5aJetPairMass", "Z->Tau Decay Reconstructed dijet a Mass", 100, 0.0, 100.0);
   
 
   vector<Tau> genTaus;
@@ -179,7 +188,7 @@ void Analysis(const char *inputFile)
 	  bool Class3 = false; //Z -> nu nu
 	  bool Class4 = false; //Z -> j  j
 	  bool Class5 = false; //Z -> tau tau
-	  bool goodJet = false; 
+	  bool goodJet = true; 
 
 	  //Class 1: 2 muons
 	  if(branchMuon->GetEntries() > 1){
@@ -252,16 +261,27 @@ void Analysis(const char *inputFile)
   	histograms.Fill("Check4Vector", Jet4Vector.Pt());
   	//T.Pt()-make sure i made 4 vector 
   	//A.deltaR(B)
-
-  	for (Int_t j = 0; i < branchElectron->GetEntries(); j++) {
-  		electron  = (Electron*) branchElectron->At(j);
-  		TLorentzVector Electron4Vector = electron->P4();
-  		double deltaR = Jet4Vector.DeltaR(Electron4Vector);
-  		goodJet = true;
-  		//double deltaRJet = Jet.P4.DeltaR(Jet.P4);
-  	}
+		cout <<"Jet Clean Loop"<< endl;
+  	if(branchElectron->GetEntries() > 0)
+  	{
+  		cout <<"Electron Clean Loop"<< endl;
+	  	for (Int_t j = 0; j < branchElectron->GetEntries(); j++) {		
+	  		electron  = (Electron*) branchElectron->At(j);
+	  		TLorentzVector Electron4Vector = electron->P4();
+	  		double deltaR = Jet4Vector.DeltaR(Electron4Vector);
+	  		histograms.Fill("deltaR", deltaR);
+	  		if (deltaR<1)
+	  		{
+	  			goodJet = false;
+	  			cout <<"badjet"<< endl;
+	  		}
+	  		
+	  		//double deltaRJet = Jet.P4.DeltaR(Jet.P4);
+	  	}
+	  }
   	if (goodJet == true){
   		histograms.Fill("GoodJetMass", jet->P4().M());
+
   	}
   }
   	
@@ -270,6 +290,7 @@ void Analysis(const char *inputFile)
 	if (branchJet->GetEntries() > 1){
       	//loop over jet, loop over electrons: if electron and top jet
       	
+
       	genJet  = (Jet*) branchJet->At(0);
 	 			genJet2  = (Jet*) branchJet->At(1);
 	 			TLorentzVector JetPair = (genJet->P4()) + (genJet2->P4());
@@ -281,14 +302,15 @@ void Analysis(const char *inputFile)
 				//QUESTION: should I be doing this with gen Taus?
 				//change jets reco->gen
 				Met = (MissingET *) branchMET->At(0);
-				if(Met->MET > 30 && genTaus.size()==2){
+				if(Met->MET > 30 && genTaus.size()==2 && branchJet->GetEntries()==2){
 					//gen taus within gen jets
 						Class3 = true;
 				}
 				//Class 4: 2 jets in Z range
-				if (branchJet->GetEntries()==4 && JetPair.M()>80 && JetPair.M()<110){
+				if (branchJet->GetEntries()==4 && JetPair.M()>70 && JetPair.M()<110){
 					//need to tag this pair as a Z boson
 					Class4 = true;
+
 				}
 
 				//Class 5: 4 taus
@@ -301,6 +323,8 @@ void Analysis(const char *inputFile)
 		cout <<"Class1"<< endl;
 		histograms.Fill("Class1Z", dimuonMass);
 		histograms.Fill("aJetPairMass", jetPairMass);
+		histograms.Fill("Class1aJetPairMass", jetPairMass);
+		histograms.Fill("NonJetDecayJetPair_aMass", jetPairMass);
 		histograms.Fill("aTauPairMass", tauPairMass);
 	}
 
@@ -308,6 +332,8 @@ void Analysis(const char *inputFile)
 		cout <<"Class2"<< endl;
 		histograms.Fill("Class2Z", dielectronMass);
 		histograms.Fill("aJetPairMass", jetPairMass);
+		histograms.Fill("Class2aJetPairMass", jetPairMass);
+		histograms.Fill("NonJetDecayJetPair_aMass", jetPairMass);
 		histograms.Fill("aTauPairMass", tauPairMass);
 	}
 
@@ -317,6 +343,8 @@ void Analysis(const char *inputFile)
 		Met = (MissingET *) branchMET->At(0);
 		histograms.Fill("Class3Z", Met->MET); //just plot as MET
 		histograms.Fill("aJetPairMass", jetPairMass);
+		histograms.Fill("Class3aJetPairMass", jetPairMass);
+		histograms.Fill("NonJetDecayJetPair_aMass", jetPairMass);
 		histograms.Fill("aTauPairMass", tauPairMass);
 	}
 
@@ -328,6 +356,8 @@ void Analysis(const char *inputFile)
 		TLorentzVector JetPair2 = (genJet3->P4()) + (genJet4->P4());
 		jetPairMass2 = JetPair2.M();
 		histograms.Fill("aJetPairMass", jetPairMass2);
+		histograms.Fill("Class4aJetPairMass", jetPairMass);
+		histograms.Fill("Class4aJetPairMass", jetPairMass2);
 		histograms.Fill("aTauPairMass", tauPairMass);
 	}
 
@@ -335,6 +365,8 @@ void Analysis(const char *inputFile)
 		cout <<"Class5"<< endl;
 		histograms.Fill("Class5Z", tauPairMass);
 		histograms.Fill("aJetPairMass", jetPairMass);
+		histograms.Fill("Class5aJetPairMass", jetPairMass);
+		histograms.Fill("NonJetDecayJetPair_aMass", jetPairMass);
 		histograms.Fill("aTauPairMass", tauPairMass2);
 		//QUESTION: should leading taus  by default be Z?
 
