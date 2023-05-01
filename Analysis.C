@@ -183,6 +183,31 @@ void Analysis(const char *inputFile)
     double jetPairMass2 = 0;
     MissingET* Met = 0;
 
+    double rectauPairMass = 0;
+    double rectauPairMass2 = 0;
+
+    TLorentzVector P4a;
+    TLorentzVector P4e(125., 0., 0., 125.);
+    TLorentzVector P4p(125., 0., 0., -125.);
+
+    /*TLorentzVector recTau;
+    TLorentzVector recTau2;
+    TLorentzVector recTau3;
+    TLorentzVector recTau4;*/
+
+    TLorentzVector rectauPair;
+		TLorentzVector rectauPair2;
+
+    genJet  = (Jet*) branchJet->At(0);
+	 	genJet2  = (Jet*) branchJet->At(1);
+	 	genJet3  = (Jet*) branchJet->At(2);
+	 	genJet4  = (Jet*) branchJet->At(3);
+
+	 	/*Tau *recTau = 0;
+		Tau *recTau2= 0;
+		Tau *recTau3= 0;
+		Tau *recTau4= 0;*/	
+
     bool Class1 = false; //Z -> mu mu
 	  bool Class2 = false; //Z -> e  e
 	  bool Class3 = false; //Z -> nu nu
@@ -198,6 +223,7 @@ void Analysis(const char *inputFile)
           dimuonMass=((muon1->P4()) + (muon2->P4())).M();
           if(dimuonMass>80 && dimuonMass<100){
           	Class1 = true;
+          	
           }
          }
 
@@ -284,15 +310,10 @@ void Analysis(const char *inputFile)
 
   	}
   }
-  	
- 
  
 	if (branchJet->GetEntries() > 1){
       	//loop over jet, loop over electrons: if electron and top jet
       	
-
-      	genJet  = (Jet*) branchJet->At(0);
-	 			genJet2  = (Jet*) branchJet->At(1);
 	 			TLorentzVector JetPair = (genJet->P4()) + (genJet2->P4());
 	 			jetPairMass = JetPair.M();
 				histograms.Fill("GenJetPairMass", JetPair.M());
@@ -317,60 +338,7 @@ void Analysis(const char *inputFile)
 				if (genTaus.size()==4){
 					Class5 = true;
 				}
-			}
-
-	if (Class1 ==true && Class2==false && Class3==false && Class4==false && Class5==false){
-		cout <<"Class1"<< endl;
-		histograms.Fill("Class1Z", dimuonMass);
-		histograms.Fill("aJetPairMass", jetPairMass);
-		histograms.Fill("Class1aJetPairMass", jetPairMass);
-		histograms.Fill("NonJetDecayJetPair_aMass", jetPairMass);
-		histograms.Fill("aTauPairMass", tauPairMass);
-	}
-
-	if (Class1 ==false && Class2==true && Class3==false && Class4==false && Class5==false){
-		cout <<"Class2"<< endl;
-		histograms.Fill("Class2Z", dielectronMass);
-		histograms.Fill("aJetPairMass", jetPairMass);
-		histograms.Fill("Class2aJetPairMass", jetPairMass);
-		histograms.Fill("NonJetDecayJetPair_aMass", jetPairMass);
-		histograms.Fill("aTauPairMass", tauPairMass);
-	}
-
-	if (Class1 ==false && Class2==false && Class3==true && Class4==false && Class5==false){
-		cout <<"Class3"<< endl;
-		//QUESTION: IGNORING MET
-		Met = (MissingET *) branchMET->At(0);
-		histograms.Fill("Class3Z", Met->MET); //just plot as MET
-		histograms.Fill("aJetPairMass", jetPairMass);
-		histograms.Fill("Class3aJetPairMass", jetPairMass);
-		histograms.Fill("NonJetDecayJetPair_aMass", jetPairMass);
-		histograms.Fill("aTauPairMass", tauPairMass);
-	}
-
-	if (Class1 ==false && Class2==false && Class3==false && Class4==true && Class5==false){
-		cout <<"Class4"<< endl;
-		histograms.Fill("Class4Z", jetPairMass);
-		genJet3  = (Jet*) branchJet->At(2);
-	 	genJet4  = (Jet*) branchJet->At(3);
-		TLorentzVector JetPair2 = (genJet3->P4()) + (genJet4->P4());
-		jetPairMass2 = JetPair2.M();
-		histograms.Fill("aJetPairMass", jetPairMass2);
-		histograms.Fill("Class4aJetPairMass", jetPairMass);
-		histograms.Fill("Class4aJetPairMass", jetPairMass2);
-		histograms.Fill("aTauPairMass", tauPairMass);
-	}
-
-	if (Class1 ==false && Class2==false && Class3==false && Class4==false && Class5==true){
-		cout <<"Class5"<< endl;
-		histograms.Fill("Class5Z", tauPairMass);
-		histograms.Fill("aJetPairMass", jetPairMass);
-		histograms.Fill("Class5aJetPairMass", jetPairMass);
-		histograms.Fill("NonJetDecayJetPair_aMass", jetPairMass);
-		histograms.Fill("aTauPairMass", tauPairMass2);
-		//QUESTION: should leading taus  by default be Z?
-
-	}						 
+			}						 
 			
     
     // Reconstructed taus - these could be there even if there are no real taus in the event
@@ -378,6 +346,7 @@ void Analysis(const char *inputFile)
     if (makeRecTaus(branchEFTracks, branchEFPhotons, branchEFNHadrons, recTaus)) {
       for (int r = 0; r < recTaus.size(); r++) {
 	Tau &recTau = recTaus[r];
+		
 	double deltaR = recTau.P4.DeltaR(recTau.MaxTrackP4);
 	histograms.Fill("DeltaR", deltaR);
 	histograms.Fill("RecTauMxTrkPT", recTau.MaxTrackP4.Pt());
@@ -393,15 +362,85 @@ void Analysis(const char *inputFile)
 	  Tau &recTau2 = recTaus[r2];
 	  if (recTau2.nProngs != 1 && recTau2.nProngs != 3) continue;
 	  if (recTau.charge * recTau2.charge == -1) { // Oppositely charged tau pair
-	    TLorentzVector tauPair = recTau.P4 + recTau2.P4;
-	    histograms.Fill("RecTauPairMass", tauPair.M());
-	    histograms.Fill("RecTauPairPT", tauPair.Pt());
-	    histograms.Fill("RecTauPairEta", tauPair.Eta());
-	    histograms.Fill("RecTauPairPhi", tauPair.Phi());
+	    TLorentzVector rectauPair = recTau.P4() + recTau2.P4();
+	    rectauPairMass = rectauPair.M();
+	    histograms.Fill("RecTauPairMass", rectauPair.M());
+	    histograms.Fill("RecTauPairPT", rectauPair.Pt());
+	    histograms.Fill("RecTauPairEta", rectauPair.Eta());
+	    histograms.Fill("RecTauPairPhi", rectauPair.Phi());
+	    for (int r3 = r2 + 1; r3 < recTaus.size(); r3++) {
+	    	for (int r4 = r3 + 1; r4 < recTaus.size(); r4++) {
+	    		Tau &recTau3 = recTaus[r3];
+					Tau &recTau4 = recTaus[r4];	
+					TLorentzVector rectauPair2 = recTau3.P4() + recTau4.P4();
+					rectauPairMass2 = rectauPair2.M();
+	    	}
+	    			
+	    }
 	  }
 	}
       }
     }
+
+
+  if (Class1 ==true && Class2==false && Class3==false && Class4==false && Class5==false){
+		cout <<"Class1"<< endl;
+		P4a = P4e + P4p - rectauPair() - muon1->P4() - muon2->P4();
+		// P4a bb code for class 1, use vis taus
+		histograms.Fill("Class1aJetPairMass", P4a.M());
+		histograms.Fill("Class1Z", dimuonMass);
+		histograms.Fill("aJetPairMass", jetPairMass);
+		//histograms.Fill("Class1aJetPairMass", jetPairMass);
+		histograms.Fill("NonJetDecayJetPair_aMass", jetPairMass);
+		histograms.Fill("aTauPairMass", tauPairMass);
+	}
+
+	if (Class1 ==false && Class2==true && Class3==false && Class4==false && Class5==false){
+		cout <<"Class2"<< endl;
+		P4a = P4e + P4p - rectauPair() - elec1->P4() - elec2->P4();
+		histograms.Fill("Class2Z", dielectronMass);
+		histograms.Fill("aJetPairMass", jetPairMass);
+		histograms.Fill("Class2aJetPairMass", P4a.M());
+		histograms.Fill("NonJetDecayJetPair_aMass", jetPairMass);
+		histograms.Fill("aTauPairMass", rectauPairMass);
+	}
+
+	if (Class1 ==false && Class2==false && Class3==true && Class4==false && Class5==false){
+		cout <<"Class3"<< endl;
+		//P4a = P4e + P4p - genTau->P4 - genTau2->P4 - muon1->P4 - muon2->P4;
+		//QUESTION: IGNORING MET
+		Met = (MissingET *) branchMET->At(0);
+		histograms.Fill("Class3Z", Met->MET); //just plot as MET
+		histograms.Fill("aJetPairMass", jetPairMass);
+		//histograms.Fill("Class3aJetPairMass", P4a.M());
+		histograms.Fill("NonJetDecayJetPair_aMass", jetPairMass);
+		histograms.Fill("aTauPairMass", rectauPairMass);
+	}
+
+	if (Class1 ==false && Class2==false && Class3==false && Class4==true && Class5==false){
+		cout <<"Class4"<< endl;
+		P4a = P4e + P4p -  rectauPair() - genJet->P4() - genJet2->P4();
+		histograms.Fill("Class4Z", jetPairMass);
+
+		TLorentzVector JetPair2 = (genJet3->P4()) + (genJet4->P4());
+		jetPairMass2 = JetPair2.M();
+		histograms.Fill("aJetPairMass", jetPairMass2);
+		histograms.Fill("Class4aJetPairMass", P4a.M());
+		//histograms.Fill("Class4aJetPairMass", jetPairMass2);
+		histograms.Fill("aTauPairMass", rectauPairMass);
+	}
+
+	if (Class1 ==false && Class2==false && Class3==false && Class4==false && Class5==true){
+		cout <<"Class5"<< endl;
+		P4a = P4e + P4p - rectauPair() - rectauPair2();
+		histograms.Fill("Class5Z", tauPairMass);
+		histograms.Fill("aJetPairMass", jetPairMass);
+		histograms.Fill("Class5aJetPairMass", P4a.M());
+		histograms.Fill("NonJetDecayJetPair_aMass", jetPairMass);
+		histograms.Fill("aTauPairMass", rectauPairMass2);
+		//QUESTION: should leading taus  by default be Z?
+
+	}
     
     // Matched taus - these should be there if the algorithm is any good
     if (makeMchTaus(visTaus, recTaus, mchTaus)) {
